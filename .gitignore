@@ -90,6 +90,6 @@ target/
 
 # defined by user.
 dac/**/__pycache__/
-dac/data/
+dac/data/*
 !dac/data/*.py
 dac/logs
