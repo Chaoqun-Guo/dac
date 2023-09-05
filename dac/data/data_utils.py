@@ -40,6 +40,7 @@ class ContrastiveDataset(tdata.Dataset):
         self.num_classes = len(self.ids_per_class)
         self.num_per_class = [len(self.ids_per_class[i])
                               for i in range(self.num_classes)]
+        logging.info(f"num per class: {self.num_per_class}")
         max_class_size = np.max(self.num_per_class)*1.0
 
         self.reverse_freq = np.array(

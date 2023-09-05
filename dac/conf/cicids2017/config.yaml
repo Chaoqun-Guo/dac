@@ -1,0 +1,102 @@
+device: cuda
+name: cicids2017
+dataset: cicids2017
+root_dir: ./logs
+feat_dir: ./data/cicids2017
+data_dir: null
+backbone_weight_path: null # pretrained backbone file, not necessary.
+
+num_max: 3000
+imbalance_ratio: 500
+
+max_depth: 3
+rec_depth: 1
+
+feat_dim: 36
+num_class: 15
+
+gmflow:
+  save_freq: 10
+  model:
+    n_blocks: 2
+    n_hidden: 1
+    num_cluster: 10
+    gmm_center_std: 0.05
+    input_order: "sequential" # "random"
+    batch_norm: True
+  data:
+    weight_q: 2.0
+    num_workers: 0
+    batchsize: 512
+  optim:
+    lr: 0.0001
+    epoch: 500
+    momentum: 0.0
+    warmup_epochs: 0
+    cos_lr: False
+    steps: []
+    grad_clip: False
+  loss:
+    lambda_lh: 2.0
+    lambda_balance: 1.0
+    lambda_purity: 0.02
+    posterior_momentum: 0.9
+    contrast_type: soft_ce
+    contrast_margin: 0.0
+    contrast_freeze: True
+
+filter:
+  llh_thres: 0.5
+  llh_proportion: 0.3
+  min_purity: 0.4
+  min_size: 10
+
+cacls:
+  eval_freq: 100
+  model:
+    type: linear #linear, cosine
+    inputs: XZP # XZP, XZ
+    hidden_layers: []
+    batch_norm: True
+    weight_decay: 0
+  loss:
+    type: CE # CE, BSM
+    label_smoothing: 0
+  data:
+    sampler:
+      name: BSM # BSM, CBS
+      num_samples_cls: 1
+    batchsize: 512
+    num_workers: 0
+  optim:
+    lr: 0.001
+    epoch: 2000
+    momentum: 0
+    warmup_epochs: 0
+    cos_lr: False
+    steps: []
+
+regcls:
+  eval_freq: 100
+  model:
+    type: linear # linear cosine
+    inputs: XZ # XZP, XZ
+    hidden_layers: []
+    batch_norm: True
+    weight_decay: 0
+  loss:
+    type: CE # CE, BSM
+    label_smoothing: 0
+  data:
+    sampler:
+      name: BSM # BSM, CBS
+      num_samples_cls: 1
+    batchsize: 512
+    num_workers: 0
+  optim:
+    lr: 0.001
+    epoch: 2000
+    momentum: 0
+    warmup_epochs: 0
+    cos_lr: False
+    steps: []
