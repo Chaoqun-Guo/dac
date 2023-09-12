@@ -51,6 +51,14 @@ def finetuned_results(model, features, labels, args, return_latent_logp=False, s
         for (pos_x, pos_y) in tqdm_wrapper(dataloder):
             pos_x = pos_x.to(args.device)
             _, log_p_pos, log_llh, log_lh_u = model(pos_x, return_lh_u=True)
+            # logging.info(f"Cluster Prob: {log_p_pos}")
+            # logging.info(f"Cluster Prob argmax: {log_p_pos.argmax(1)}")
+            # logging.info(f"Cluster Prob softmax: {log_p_pos.softmax(1)}")
+            # logging.info(
+            #     f"Cluster Prob max: {torch.max(log_p_pos.softmax(1),dim=1)[0]}")
+            # logging.info(
+            #     f"Cluster Prob max index: {torch.where(torch.max(log_p_pos.softmax(1),dim=1)[0]>0.8)}")
+            # exit()
             cluster = log_p_pos.argmax(1)
             x.append(pos_x.cpu())
             y.append(pos_y.cpu().long())
@@ -99,6 +107,7 @@ def finetune_representations(model, features, labels, args, save_dir):
     best_state_dict = None
     best_epoch = None
 
+    purity_decay = np.linspace(1.0, 0.8, flow_args.optim.epoch+1)
     for epoch_id in range(1, flow_args.optim.epoch+1):
         model.train()
         logging.info(f"Epoch {epoch_id}")
@@ -112,6 +121,10 @@ def finetune_representations(model, features, labels, args, save_dir):
             _, log_p_pos, log_lh_pos = model(pos_x)
             _, log_p_neg, log_lh_neg = model(neg_x)
 
+            # mask = log_p_pos.ge(args.threshold).float()
+            # logging.info(f"args.threshold: {args.threshold}")
+            # logging.info(f"Mask: {mask}")
+
             losses = {}
             losses["log_lh"] = - \
                 (log_lh_pos*rev_wgt).mean() * loss_args.lambda_lh
@@ -119,12 +132,15 @@ def finetune_representations(model, features, labels, args, save_dir):
 
             if loss_args.lambda_purity > 0:
                 if loss_args.contrast_freeze:
-                    loss_purity = contrast_loss(log_p_neg, log_p_pos.detach())
+                    loss_purity = contrast_loss(
+                        log_p_neg, log_p_pos.detach())
                 else:
-                    loss_purity = contrast_loss(log_p_neg, log_p_pos)
+                    loss_purity = contrast_loss(
+                        log_p_neg, log_p_pos)
 
                 losses["purity"] = loss_purity * loss_args.lambda_purity
                 losses["total"] = losses["total"] + losses["purity"]
+                # losses["total"] = losses["total"]
 
             if loss_args.lambda_balance > 0:
                 posterior_p_k = torch.softmax(log_p_pos, -1).mean(0) + 1e-7
@@ -189,7 +205,6 @@ def finetune_representations(model, features, labels, args, save_dir):
             cluster_size > args.filter.min_size)
         remain_samples = np.sum(cluster_size[remain_mask])
         remain_clusters = np.sum(remain_mask)
-
         cluster_size = np.sort(cluster_size)
         qt = len(cluster_size)//4
 
@@ -230,8 +245,8 @@ def divide_samples(class_labels, cluster_labels, sample_llh, args):
         test=sample_llh.test < args.filter.llh_thres
     )
     labelmap_index = EasyDict()
-    cluster_prior = {}  # cluster_id -> {class_id->freq}
-
+    # cluster_id -> {class_id->freq}
+    cluster_prior = {}
     # train
     cluster_sizes = Counter(cluster_labels.train.tolist())
 
@@ -285,6 +300,8 @@ def divide_and_conquer(all_features, all_inputs, all_labels, args, save_dir, glo
         logging.info(
             f"Masked data sizes {features.train.shape}, {features.test.shape}, {labels.train.shape}, {labels.test.shape}")
 
+    args.threshold = torch.tensor(args.threshold).to(args.device)
+
     logging.info("Clustering finetune.")
     ft_model = FlowGMM(args).to(args.device)
     if args.ft_model_weight is not None and len(args.ft_model_weight) >= rec_depth:
@@ -312,15 +329,26 @@ def divide_and_conquer(all_features, all_inputs, all_labels, args, save_dir, glo
 
     if args.filter.llh_proportion is not None:
         if args.filter.llh_thres is not None:
+            logging.info(f"Filter configuring...")
             logging.warning(
                 "Both 'llh_thres' and 'llh_proportion' are set: 'llh_proportion' is used")
         if global_mask is None:
             available_llh = sample_llh.train
         else:
             available_llh = sample_llh.train[global_mask.train]
-        thres_index = len(available_llh)*(1.-args.filter.llh_proportion)
+
+        llh_proportion = max(
+            (1-rec_depth/max_depth), args.filter.llh_proportion)
+        thres_index = len(available_llh)*(1.-llh_proportion)
+
+        # thres_index = len(available_llh)*(1.-args.filter.llh_proportion)
         quantile = sorted(available_llh)[int(thres_index)]
+        # quantile = np.median(sorted(available_llh))
         args.filter.update("llh_thres", quantile)
+
+        logging.info(f"available llh: {available_llh}")
+        logging.info(f"thres_index: {thres_index}")
+        logging.info(f"quantile: {quantile}")
 
     classify_index, labelmap_index, cluster_prior = divide_samples(
         class_labels, cluster_labels, sample_llh, args)
@@ -365,6 +393,7 @@ def divide_and_conquer(all_features, all_inputs, all_labels, args, save_dir, glo
         cls_model_1, train_loader, test_loader,
         train_label=class_labels.train[labelmap_index.train],
         all_train_label=class_labels.train, args=args)
+
     torch.save({
         "model": cls_model_1.state_dict(),
     }, osp.join(save_dir, f"cacls_models_D{rec_depth}.t7"))

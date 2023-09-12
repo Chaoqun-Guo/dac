@@ -12,8 +12,9 @@ import numpy as np
 
 
 class BalancedSoftmaxLoss(nn.CrossEntropyLoss):
+
     def __init__(self, all_train_label, num_classes, smoothing=0, sample_weight=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
         assert smoothing == 0, str(smoothing)
 
@@ -41,8 +42,9 @@ class BalancedSoftmaxLoss(nn.CrossEntropyLoss):
 
 
 class BalancedSoftmaxLoss_v2(nn.Module):
+
     def __init__(self, all_train_label, num_classes, smoothing=0, sample_weight=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
         self.num_class = num_classes
         self.smoothing = smoothing
@@ -77,6 +79,7 @@ class BalancedSoftmaxLoss_v2(nn.Module):
 
 
 class CrossEntropyLossWrapper(nn.CrossEntropyLoss):
+
     def __init__(self, *args, **kwargs):
         super().__init__()
 

@@ -5,6 +5,7 @@ root_dir: ./logs
 feat_dir: null
 data_dir: null
 backbone_weight_path: null # pretrained backbone file, not necessary.
+threshold: 0.8
 
 num_max: null
 imbalance_ratio: null
@@ -50,7 +51,7 @@ filter:
   llh_proportion: 0.3
   min_purity: 0.5
   min_size: 10
-  
+
 cacls:
   eval_freq: 100
   model:
@@ -64,7 +65,7 @@ cacls:
     label_smoothing: 0
   data:
     sampler:
-      name: BSM # BSM, CBS 
+      name: BSM # BSM, CBS
       num_samples_cls: 1
     batchsize: 128
     num_workers: 0

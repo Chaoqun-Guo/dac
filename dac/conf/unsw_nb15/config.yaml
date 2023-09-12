@@ -5,11 +5,11 @@ root_dir: ./logs
 feat_dir: ./data/unsw_nb15
 data_dir: null
 backbone_weight_path: null # pretrained backbone file, not necessary.
-
+threshold: 0.8
 num_max: 2000
 imbalance_ratio: 500
 
-max_depth: 3
+max_depth: 5
 rec_depth: 1
 
 feat_dim: 190
@@ -46,7 +46,7 @@ gmflow:
     contrast_freeze: True
 
 filter:
-  llh_thres: 0.5
+  llh_thres: 0.7
   llh_proportion: 0.3
   min_purity: 0.4
   min_size: 10
