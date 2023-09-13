@@ -64,6 +64,5 @@ class CosineClusterAidedClassifier(ClusterAidedClassifier):
 class TauClusterAidedClassifier(ClusterAidedClassifier):
     def __init__(self, model_type, feat_dim, num_class, *args, **kwargs):
         super().__init__(model_type, feat_dim, num_class)
-        self.cls_x = TauNormClassifier(feat_dim, num_class, *args, **kwargs)
-        self.cls_zp = TauNormClassifier(
-            self.zp_dim, num_class, *args, **kwargs)
+        self.cls_x = TauNormClassifier(feat_dim, num_class)
+        self.cls_zp = TauNormClassifier(self.zp_dim, num_class,)

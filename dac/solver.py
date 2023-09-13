@@ -234,11 +234,19 @@ def finetune_representations(model, features, labels, args, save_dir):
         model.load_state_dict(best_state_dict)
 
     logging.getLogger("file").info(
-        f"Best clusters remaining: {best_remain_cluster}")
+        "Best clusters remaining: %d", best_remain_cluster)
+
     return model
 
 
 def divide_samples(class_labels, cluster_labels, sample_llh, args):
+    """divide samples to classifier.
+    @Time: 2023/09/13 15:41:27
+    @Params: 
+        param: desc
+    @Return: 
+
+    """
     # determine label mapping
     classify_index = EasyDict(
         train=sample_llh.train < args.filter.llh_thres,
@@ -273,7 +281,7 @@ def divide_samples(class_labels, cluster_labels, sample_llh, args):
     return classify_index, labelmap_index, cluster_prior
 
 
-def divide_and_conquer(all_features, all_inputs, all_labels, args, save_dir, global_mask=None, rec_depth=1, max_depth=1):
+def divide_and_conquer(all_features, all_inputs, all_labels, args, save_dir, global_mask=None, rec_depth=1, max_depth=5):
     """divide and conquer.
     @Time: 2023/08/25 17:06:05
     @Params: 
@@ -411,7 +419,8 @@ def divide_and_conquer(all_features, all_inputs, all_labels, args, save_dir, glo
     if rec_depth < max_depth:
         rec_depth += 1
         test_cls_pred = divide_and_conquer(all_features, all_inputs, all_labels, args,
-                                           save_dir, global_mask=classify_index, rec_depth=rec_depth, max_depth=max_depth)
+                                           save_dir, global_mask=classify_index,
+                                           rec_depth=rec_depth, max_depth=max_depth)
     else:
         cls_model_2 = get_classifier(args.regcls.model, args)
         mask = classify_index
@@ -445,30 +454,36 @@ def divide_and_conquer(all_features, all_inputs, all_labels, args, save_dir, glo
         test_cls_pred, _, _ = eval_regular_classifier(
             cls_model_2, args, test_loader)
 
-    logging.info("Classification results.")
+    logging.getLogger("file").info("Classification results.")
     for split in ["train", "test"]:
         logging.info(
-            f"{split}: {np.sum(classify_index[split])} for classification, {np.sum(labelmap_index[split])} for labelmapping")
+            f"{split.upper()}: {np.sum(classify_index[split])} for classification, {np.sum(labelmap_index[split])} for labelmapping")
 
     for split, pred in zip(["test"], [test_map_pred]):
+
         gt = class_labels[split]
         pred = pred[labelmap_index[split]]
         gt = gt[labelmap_index[split]]
+
         many_shot, median_shot, low_shot = shot_acc(
             pred, gt, class_labels.train)
         mcc_score, nmi_score = mcc_mni_metrics(pred, gt)
         mean_acc = np.mean(pred == gt)
+
         logging.getLogger("file").info(
             f"[ D{rec_depth} ] CA Classifier: {split}: {mean_acc:.3f} / {many_shot:.3f}, {median_shot:.3f}, {low_shot:.3f} ({mcc_score:.3f}, {nmi_score:.3f})")
 
     for split, pred in zip(["test"], [test_cls_pred]):
+
         gt = class_labels[split]
         pred = pred[classify_index[split]]
         gt = gt[classify_index[split]]
+
         many_shot, median_shot, low_shot = shot_acc(
             pred, gt, class_labels.train)
         mcc_score, nmi_score = mcc_mni_metrics(pred, gt)
         mean_acc = np.mean(pred == gt)
+
         logging.getLogger("file").info(
             f"[ D{rec_depth} ] Regular Classifier: {split}: {mean_acc:.3f} / {many_shot:.3f}, {median_shot:.3f}, {low_shot:.3f} ({mcc_score:.3f}, {nmi_score:.3f})")
 
@@ -484,13 +499,14 @@ def divide_and_conquer(all_features, all_inputs, all_labels, args, save_dir, glo
         pred = final_test_pred[global_mask.test]
 
     assert gt.shape == pred.shape, str(gt.shape)+", "+str(pred.shape)
-    logging.info("pred: %s; gt: %s", pred, gt)
+    # logging.info("pred: %s; gt: %s", pred, gt)
 
     many_shot, median_shot, low_shot = shot_acc(pred, gt, class_labels.test)
     mcc_score, nmi_score = mcc_mni_metrics(pred, gt)
     mean_acc = np.mean(pred == gt)
+
     logging.getLogger("file").info(
-        f"Total test: mean acc {mean_acc:.3f} / {many_shot:.3f}, {median_shot:.3f}, {low_shot:.3f} ( mcc score {mcc_score:.3f}, nmi score {nmi_score:.3f})")
+        f"Final Test: mean acc {mean_acc:.3f} / {many_shot:.3f}, {median_shot:.3f}, {low_shot:.3f} ( mcc score {mcc_score:.3f}, nmi score {nmi_score:.3f})")
     return final_test_pred
 
 

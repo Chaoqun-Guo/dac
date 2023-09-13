@@ -72,9 +72,11 @@ def train_cluster_aided_classifier(
             pred, _, gt = eval_cluster_aided_classifier(
                 cls_model, args, test_loader)
             assert pred.shape == gt.shape, str(pred.shape)+", "+str(gt.shape)
+
             many_shot, median_shot, low_shot = shot_acc(
                 pred, gt, all_train_label)
             mean_acc = np.mean(pred == gt)
+
             msg = f"Test [{epoch}] {mean_acc:.3f} / {many_shot:.3f}, {median_shot:.3f}, {low_shot:.3f}"
             logging.info(msg)
             if mean_acc > best_acc:
@@ -84,6 +86,7 @@ def train_cluster_aided_classifier(
                 best_message = msg
     logging.getLogger("file").info(
         f"[ cacls ] Best epoch: {best_epoch}, {best_message}")
+
     cls_model.load_state_dict(best_state_dict)
     return cls_model
 
@@ -147,8 +150,10 @@ def train_regular_classifier(cls_model, train_loader, test_loader, train_label, 
                 best_epoch = epoch
                 best_state_dict = copy.deepcopy(cls_model.state_dict())
                 best_message = msg
+
     logging.getLogger("file").info(
         f"[ regcls ] Best epoch: {best_epoch}, {best_message}")
+
     cls_model.load_state_dict(best_state_dict)
     return cls_model
 

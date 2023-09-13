@@ -16,7 +16,7 @@ feat_dim: 190
 num_class: 10
 
 gmflow:
-  save_freq: 10
+  save_freq: 100
   model:
     n_blocks: 2
     n_hidden: 1
@@ -52,9 +52,9 @@ filter:
   min_size: 10
 
 cacls:
-  eval_freq: 100
+  eval_freq: 10
   model:
-    type: linear #linear, cosine
+    type: tau #linear, cosine, tau
     inputs: XZP # XZP, XZ
     hidden_layers: []
     batch_norm: True
@@ -77,9 +77,9 @@ cacls:
     steps: []
 
 regcls:
-  eval_freq: 100
+  eval_freq: 10
   model:
-    type: linear # linear cosine
+    type: tau # linear, cosine, tau
     inputs: XZ # XZP, XZ
     hidden_layers: []
     batch_norm: True

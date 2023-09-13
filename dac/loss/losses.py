@@ -148,9 +148,15 @@ class SoftCrossEntropyContrastLoss(GmmContrastLoss):
 
 
 def get_contrast_loss(name):
+    """get contrast loss
+    @Time: 2023/09/13 14:40:49
+    @Params: 
+        param: desc
+    @Return: 
+
+    """
     if name == "ce":
         return CrossEntropyContrastLoss
-    elif name == "soft_ce":
+    if name == "soft_ce":
         return SoftCrossEntropyContrastLoss
-    else:
-        raise NotImplementedError(name)
+    raise NotImplementedError(name)
