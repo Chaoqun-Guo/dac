@@ -206,33 +206,70 @@ def write2h5py(filename, features, labels):
 
 def build_dataset(dataset_name="dataset", num_max=3000, num_classes=10, imb_ratio=20):
 
-    multi_train = pd.read_csv("./unsw_nb15/train_set_multi_classification.csv")
-    multi_test = pd.read_csv("./unsw_nb15/test_set_multi_classification.csv")
+    if dataset_name == "unsw_nb15":
 
-    num_per_class = make_imb_data(num_max, num_classes, imb_ratio)
+        multi_train = pd.read_csv(
+            "./unsw_nb15/train_set_multi_classification.csv")
+        multi_test = pd.read_csv(
+            "./unsw_nb15/test_set_multi_classification.csv")
 
-    label_idx, need_label, final_label = get_data_idx(
-        multi_train['label'].to_numpy(), num_per_class)
+        num_per_class = make_imb_data(num_max, num_classes, imb_ratio)
 
-    train_df, train_dataloader = make_data_loader(
-        multi_train, label_idx, True, return_df=True, keep_all=False)
-    test_df, test_dataloader = make_data_loader(
-        multi_test, None, False, return_df=True, keep_all=True)
+        label_idx, need_label, final_label = get_data_idx(
+            multi_train['label'].to_numpy(), num_per_class)
 
-    logging.info(f"Train data: {len(train_df)}; Test data: {len(test_df)}")
+        train_df, train_dataloader = make_data_loader(
+            multi_train, label_idx, True, return_df=True, keep_all=False)
+        test_df, test_dataloader = make_data_loader(
+            multi_test, None, False, return_df=True, keep_all=True)
 
-    train_df.to_csv(
-        f"./unsw_nb15/{dataset_name}_train_{num_max}_{imb_ratio}.csv", index=False)
-    test_df.to_csv(
-        f"./unsw_nb15/{dataset_name}_test_{num_max}_{imb_ratio}.csv")
-    write2h5py(f'./unsw_nb15/feature_train.h5', train_df.drop('label',
-               axis=1).to_numpy(), train_df['label'].to_numpy())
-    write2h5py(f'./unsw_nb15/feature_test.h5', test_df.drop('label',
-               axis=1).to_numpy(), test_df['label'].to_numpy())
-    logging.info("Build dataset done, return dataset_df and dataloader")
+        logging.info(f"Train data: {len(train_df)}; Test data: {len(test_df)}")
+
+        train_df.to_csv(
+            f"./unsw_nb15/{dataset_name}_train_{num_max}_{imb_ratio}.csv", index=False)
+        test_df.to_csv(
+            f"./unsw_nb15/{dataset_name}_test_{num_max}_{imb_ratio}.csv")
+        write2h5py(f'./unsw_nb15/feature_train_{num_max}_{imb_ratio}.h5', train_df.drop('label',
+                                                                                        axis=1).to_numpy(), train_df['label'].to_numpy())
+        write2h5py(f'./unsw_nb15/feature_test_{num_max}_{imb_ratio}.h5', test_df.drop('label',
+                                                                                      axis=1).to_numpy(), test_df['label'].to_numpy())
+        logging.info("Build dataset done, return dataset_df and dataloader")
+    elif dataset_name == "cicids2017":
+        # multi_train = pd.read_csv(
+        #     "./cicids2017/train_set_multi_classification.csv")
+        # multi_test = pd.read_csv(
+        #     "./cicids2017/test_set_multi_classification.csv")
+        multi_train = pd.read_csv(
+            "./cicids2017/cicids2017_train.csv")
+        multi_test = pd.read_csv(
+            "./cicids2017/cicids2017_test.csv")
+
+        num_per_class = make_imb_data(num_max, num_classes, imb_ratio)
+
+        label_idx, need_label, final_label = get_data_idx(
+            multi_train['label'].to_numpy(), num_per_class)
+
+        train_df, train_dataloader = make_data_loader(
+            multi_train, label_idx, True, return_df=True, keep_all=False)
+        test_df, test_dataloader = make_data_loader(
+            multi_test, None, False, return_df=True, keep_all=True)
+
+        logging.info(f"Train data: {len(train_df)}; Test data: {len(test_df)}")
+
+        train_df.to_csv(
+            f"./cicids2017/{dataset_name}_train_{num_max}_{imb_ratio}.csv", index=False)
+        test_df.to_csv(
+            f"./cicids2017/{dataset_name}_test_{num_max}_{imb_ratio}.csv")
+        write2h5py(f'./cicids2017/feature_train_{num_max}_{imb_ratio}.h5', train_df.drop('label',
+                                                                                         axis=1).to_numpy(), train_df['label'].to_numpy())
+        write2h5py(f'./cicids2017/feature_test_{num_max}_{imb_ratio}.h5', test_df.drop('label',
+                                                                                       axis=1).to_numpy(), test_df['label'].to_numpy())
+        logging.info("Build dataset done, return dataset_df and dataloader")
 
     return train_dataloader, test_dataloader, train_df, test_df
 
 
 if __name__ == "__main__":
-    build_dataset('unsw_nb15', num_max=2000, num_classes=10, imb_ratio=500)
+    # unsw_nb15: 10
+    # cicids2017: 15
+    build_dataset('cicids2017', num_max=3000, num_classes=15, imb_ratio=500)
