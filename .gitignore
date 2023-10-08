@@ -93,3 +93,4 @@ dac/**/__pycache__/
 dac/data/*
 !dac/data/*.py
 dac/logs
+dac/data_exps
